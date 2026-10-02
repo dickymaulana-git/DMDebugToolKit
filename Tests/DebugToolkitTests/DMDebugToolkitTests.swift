@@ -35,11 +35,11 @@ final class DebugToolkitTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            recorder.logs.count,
+            recorder.allLogs().count,
             1
         )
 
-        let log = recorder.logs[0]
+        let log = recorder.allLogs()[0]
 
         XCTAssertEqual(
             log.method,
@@ -89,14 +89,14 @@ final class DebugToolkitTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            recorder.logs.count,
+            recorder.allLogs().count,
             1
         )
 
         recorder.clear()
 
         XCTAssertTrue(
-            recorder.logs.isEmpty
+            recorder.allLogs().isEmpty
         )
     }
 
@@ -115,17 +115,17 @@ final class DebugToolkitTests: XCTestCase {
         }
 
         XCTAssertEqual(
-            recorder.logs.count,
+            recorder.allLogs().count,
             200
         )
 
         XCTAssertEqual(
-            recorder.logs.first?.url,
+            recorder.allLogs().first?.url,
             "https://example.com/249"
         )
 
         XCTAssertEqual(
-            recorder.logs.last?.url,
+            recorder.allLogs().last?.url,
             "https://example.com/50"
         )
 

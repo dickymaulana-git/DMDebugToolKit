@@ -4,10 +4,10 @@ final class NetworkRecorder {
 
     static let shared = NetworkRecorder()
 
-    private(set) var logs: [NetworkLog] = []
+    private var logs: [NetworkLog] = []
 
     private let queue = DispatchQueue(
-        label: "DebugToolkit.NetworkRecorder"
+        label: "DMDebugToolKit.NetworkRecorder"
     )
 
     private let maxLogs = 200
@@ -24,7 +24,6 @@ final class NetworkRecorder {
         responseHeaders: [String: String] = [:],
         responseBody: String? = nil
     ) {
-
         let log = NetworkLog(
             id: UUID(),
             timestamp: Date(),
@@ -39,28 +38,23 @@ final class NetworkRecorder {
         )
 
         queue.sync {
-            logs.insert(
-                log,
-                at: 0
-            )
+            logs.insert(log, at: 0)
 
             if logs.count > maxLogs {
-                logs.removeLast(
-                    logs.count - maxLogs
-                )
+                logs.removeLast(logs.count - maxLogs)
             }
+        }
+    }
+
+    func allLogs() -> [NetworkLog] {
+        queue.sync {
+            logs
         }
     }
 
     func clear() {
         queue.sync {
             logs.removeAll()
-        }
-    }
-    
-    func allLogs() -> [NetworkLog] {
-        queue.sync {
-            logs
         }
     }
 }
