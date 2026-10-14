@@ -1,28 +1,29 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct NetworkDetailView: View {
-
+    
     let log: NetworkLog
-
+    
     @Environment(\.presentationMode)
     private var presentationMode
-
+    
     @State private var copiedItem: String?
-
+    
     var body: some View {
         VStack(spacing: 0) {
-
+            
             navigationHeader
-
+            
             ScrollView {
                 VStack(
                     alignment: .leading,
                     spacing: 22
                 ) {
-
+                    
                     // MARK: - INFO
-
+                    
                     sectionContainer(
                         title: "INFO",
                         color: DebugUIStyle.accent
@@ -32,19 +33,19 @@ struct NetworkDetailView: View {
                             value: log.url,
                             copyID: "info-url"
                         )
-
+                        
                         infoRow(
                             title: "Method",
                             value: log.method,
                             copyID: "info-method"
                         )
-
+                        
                         infoRow(
                             title: "Status",
                             value: "\(log.statusCode ?? 0)",
                             copyID: "info-status"
                         )
-
+                        
                         infoRow(
                             title: "Time interval",
                             value: String(
@@ -54,31 +55,31 @@ struct NetworkDetailView: View {
                             copyID: "info-duration"
                         )
                     }
-
+                    
                     // MARK: - REQUEST
-
+                    
                     sectionContainer(
                         title: "REQUEST",
                         color: DebugUIStyle.info
                     ) {
-
+                        
                         subsectionTitle(
                             "Headers",
                             color: DebugUIStyle.info
                         )
-
+                        
                         headersView(
                             log.requestHeaders,
                             color: DebugUIStyle.info,
                             prefix: "request-header"
                         )
-
+                        
                         if let requestBody = log.requestBody {
                             subsectionTitle(
                                 "Body",
                                 color: DebugUIStyle.info
                             )
-
+                            
                             bodyView(
                                 requestBody,
                                 color: DebugUIStyle.info,
@@ -86,31 +87,31 @@ struct NetworkDetailView: View {
                             )
                         }
                     }
-
+                    
                     // MARK: - RESPONSE
-
+                    
                     sectionContainer(
                         title: "RESPONSE",
                         color: DebugUIStyle.success
                     ) {
-
+                        
                         subsectionTitle(
                             "Headers",
                             color: DebugUIStyle.success
                         )
-
+                        
                         headersView(
                             log.responseHeaders,
                             color: DebugUIStyle.success,
                             prefix: "response-header"
                         )
-
+                        
                         if let responseBody = log.responseBody {
                             subsectionTitle(
                                 "Body",
                                 color: DebugUIStyle.success
                             )
-
+                            
                             bodyView(
                                 responseBody,
                                 color: DebugUIStyle.success,
@@ -129,19 +130,19 @@ struct NetworkDetailView: View {
         )
         .navigationBarHidden(true)
     }
-
+    
     // MARK: - Navigation Header
-
+    
     private var navigationHeader: some View {
-
+        
         HStack {
-
+            
             Button {
                 presentationMode.wrappedValue.dismiss()
             } label: {
-
+                
                 HStack(spacing: 5) {
-
+                    
                     Image(systemName: "chevron.left")
                         .font(
                             .system(
@@ -149,7 +150,7 @@ struct NetworkDetailView: View {
                                 weight: .regular
                             )
                         )
-
+                    
                     Text("Back")
                         .font(
                             .system(
@@ -162,9 +163,9 @@ struct NetworkDetailView: View {
                     DebugUIStyle.accent
                 )
             }
-
+            
             Spacer()
-
+            
             Text(urlTitle)
                 .font(
                     .system(
@@ -172,27 +173,33 @@ struct NetworkDetailView: View {
                         weight: .semibold
                     )
                 )
-
+            
             Spacer()
-
-            Button {
-                copyAll()
+            
+            Menu {
+                Button {
+                    copyAll()
+                } label: {
+                    Label("Copy All", systemImage: "doc.on.doc")
+                }
+                
+                Button {
+                    copyAsCurl()
+                } label: {
+                    Label("Copy as cURL", systemImage: "terminal")
+                }
+                
+                Button {
+                    shareJSON()
+                } label: {
+                    Label("Export JSON", systemImage: "doc.text")
+                }
             } label: {
-
-                Text(
-                    copiedItem == "all"
-                    ? "Copied"
-                    : "Copy All"
-                )
-                .font(
-                    .system(
-                        size: 15,
-                        weight: .regular
-                    )
-                )
-                .foregroundStyle(
-                    DebugUIStyle.accent
-                )
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(DebugUIStyle.accent)
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
             }
             .frame(minWidth: 62, alignment: .trailing)
         }
@@ -202,43 +209,137 @@ struct NetworkDetailView: View {
             Color(.systemBackground)
         )
     }
+    
+    private func shareJSON() {
+        let activityVC = UIActivityViewController(
+            activityItems: [exportJSON],
+            applicationActivities: nil
+        )
 
+        guard
+            let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }),
+            let rootVC = scene.windows.first(where: \.isKeyWindow)?
+                .rootViewController
+        else {
+            return
+        }
+
+        var topVC = rootVC
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = topVC.view
+            popover.sourceRect = CGRect(
+                x: topVC.view.bounds.midX,
+                y: topVC.view.bounds.midY,
+                width: 0,
+                height: 0
+            )
+            popover.permittedArrowDirections = []
+        }
+
+        topVC.present(activityVC, animated: true)
+    }
+    
+    private func copyAsCurl() {
+        var command = "curl"
+        
+        command += " -X \(shellEscape(log.method))"
+        command += " \(shellEscape(log.url))"
+        
+        for key in log.requestHeaders.keys.sorted() {
+            let value = log.requestHeaders[key] ?? ""
+            let header = "\(key): \(value)"
+            
+            command += " -H \(shellEscape(header))"
+        }
+        
+        if let body = log.requestBody, !body.isEmpty {
+            command += " --data-raw \(shellEscape(body))"
+        }
+        
+        UIPasteboard.general.string = command
+        copiedItem = "curl"
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            if copiedItem == "curl" {
+                copiedItem = nil
+            }
+        }
+    }
+    
+    private var exportJSON: String {
+        let data: [String: Any] = [
+            "url": log.url,
+            "method": log.method,
+            "statusCode": log.statusCode as Any? ?? NSNull(),
+            "duration": log.duration,
+            "requestHeaders": log.requestHeaders,
+            "requestBody": log.requestBody as Any? ?? NSNull(),
+            "responseHeaders": log.responseHeaders,
+            "responseBody": log.responseBody as Any? ?? NSNull()
+        ]
+        
+        guard
+            let jsonData = try? JSONSerialization.data(
+                withJSONObject: data,
+                options: [.prettyPrinted, .sortedKeys]
+            ),
+            let json = String(data: jsonData, encoding: .utf8)
+        else {
+            return "{}"
+        }
+        
+        return json
+    }
+    
+    private func shellEscape(_ value: String) -> String {
+        "'" + value.replacingOccurrences(
+            of: "'",
+            with: "'\\''"
+        ) + "'"
+    }
+    
     private var urlTitle: String {
         let components = log.url
             .components(separatedBy: "/")
             .filter { !$0.isEmpty }
-
+        
         guard !components.isEmpty else {
             return "Request"
         }
-
+        
         return components
             .suffix(2)
             .joined(separator: "/")
     }
     
     // MARK: - Section
-
+    
     private func sectionContainer<Content: View>(
         title: String,
         color: Color,
         @ViewBuilder content: () -> Content
     ) -> some View {
-
+        
         VStack(
             alignment: .leading,
             spacing: 10
         ) {
-
+            
             HStack(spacing: 8) {
-
+                
                 Circle()
                     .fill(color)
                     .frame(
                         width: 8,
                         height: 8
                     )
-
+                
                 Text(title)
                     .font(
                         .system(
@@ -247,14 +348,14 @@ struct NetworkDetailView: View {
                         )
                     )
                     .foregroundStyle(color)
-
+                
                 Rectangle()
                     .fill(
                         color.opacity(0.18)
                     )
                     .frame(height: 1)
             }
-
+            
             VStack(
                 alignment: .leading,
                 spacing: 12
@@ -263,21 +364,21 @@ struct NetworkDetailView: View {
             }
         }
     }
-
+    
     // MARK: - Subsection
-
+    
     private func subsectionTitle(
         _ title: String,
         color: Color
     ) -> some View {
-
+        
         HStack(spacing: 7) {
-
+            
             Image(
                 systemName:
                     title == "Headers"
-                    ? "list.bullet.rectangle"
-                    : "doc.text"
+                ? "list.bullet.rectangle"
+                : "doc.text"
             )
             .font(
                 .system(
@@ -286,7 +387,7 @@ struct NetworkDetailView: View {
                 )
             )
             .foregroundStyle(color)
-
+            
             Text(title)
                 .font(
                     .system(
@@ -298,22 +399,22 @@ struct NetworkDetailView: View {
         }
         .padding(.top, 2)
     }
-
+    
     // MARK: - Info Row
-
+    
     private func infoRow(
         title: String,
         value: String,
         copyID: String
     ) -> some View {
-
+        
         VStack(
             alignment: .leading,
             spacing: 4
         ) {
-
+            
             HStack(alignment: .top) {
-
+                
                 Text("[\(title)]")
                     .font(
                         .system(
@@ -322,15 +423,15 @@ struct NetworkDetailView: View {
                         )
                     )
                     .foregroundStyle(.secondary)
-
+                
                 Spacer()
-
+                
                 copyButton(
                     value: value.isEmpty ? "-" : value,
                     id: copyID
                 )
             }
-
+            
             Text(value)
                 .font(DebugUIStyle.body)
                 .foregroundStyle(.primary)
@@ -350,41 +451,41 @@ struct NetworkDetailView: View {
             )
         )
     }
-
+    
     // MARK: - Headers
-
+    
     private func headersView(
         _ headers: [String: String],
         color: Color,
         prefix: String
     ) -> some View {
-
+        
         let keys = headers.keys.sorted()
-
+        
         return VStack(spacing: 0) {
-
+            
             if keys.isEmpty {
-
+                
                 HStack {
-
+                    
                     Text("No headers")
                         .font(DebugUIStyle.body)
                         .foregroundStyle(.secondary)
-
+                    
                     Spacer()
                 }
                 .padding(12)
-
+                
             } else {
-
+                
                 ForEach(
                     keys.indices,
                     id: \.self
                 ) { index in
-
+                    
                     let key = keys[index]
                     let value = headers[key] ?? ""
-
+                    
                     headerRow(
                         title: key,
                         value: value,
@@ -401,9 +502,9 @@ struct NetworkDetailView: View {
             )
         )
     }
-
+    
     // MARK: - Header Row
-
+    
     private func headerRow(
         title: String,
         value: String,
@@ -411,26 +512,26 @@ struct NetworkDetailView: View {
         copyID: String,
         index: Int
     ) -> some View {
-
+        
         VStack(
             alignment: .leading,
             spacing: 3
         ) {
-
+            
             HStack(alignment: .top) {
-
+                
                 Text("[\(title)]")
                     .font(DebugUIStyle.caption)
                     .foregroundStyle(.secondary)
-
+                
                 Spacer()
-
+                
                 copyButton(
                     value: value,
                     id: copyID
                 )
             }
-
+            
             Text(
                 value.isEmpty
                 ? "-"
@@ -452,28 +553,28 @@ struct NetworkDetailView: View {
             )
         )
     }
-
+    
     // MARK: - Body
-
+    
     private func bodyView(
         _ value: String,
         color: Color,
         copyID: String
     ) -> some View {
-
+        
         VStack(
             alignment: .leading,
             spacing: 0
         ) {
-
+            
             HStack {
-
+                
                 Text("Body")
                     .font(DebugUIStyle.caption)
                     .foregroundStyle(.secondary)
-
+                
                 Spacer()
-
+                
                 copyButton(
                     value: value,
                     id: copyID
@@ -481,12 +582,12 @@ struct NetworkDetailView: View {
             }
             .padding(.horizontal, 12)
             .padding(.top, 10)
-
+            
             ScrollView(
                 .horizontal,
                 showsIndicators: false
             ) {
-
+                
                 Text(value)
                     .font(
                         .system(
@@ -516,28 +617,28 @@ struct NetworkDetailView: View {
             )
         )
     }
-
+    
     // MARK: - Copy Button
-
+    
     private func copyButton(
         value: String,
         id: String
     ) -> some View {
-
+        
         Button {
-
+            
             copy(
                 value: value,
                 id: id
             )
-
+            
         } label: {
-
+            
             Image(
                 systemName:
                     copiedItem == id
-                    ? "checkmark"
-                    : "doc.on.doc"
+                ? "checkmark"
+                : "doc.on.doc"
             )
             .font(
                 .system(
@@ -565,9 +666,9 @@ struct NetworkDetailView: View {
         }
         .buttonStyle(.plain)
     }
-
+    
     // MARK: - Copy
-
+    
     private func copy(
         value: String,
         id: String
@@ -576,20 +677,20 @@ struct NetworkDetailView: View {
             copiedItem = id
             return
         }
-
+        
         UIPasteboard.general.setValue(
             value,
             forPasteboardType: "public.utf8-plain-text"
         )
-
+        
         print("COPY VALUE:", value)
         print(
             "PASTEBOARD VALUE:",
             UIPasteboard.general.string ?? "NIL"
         )
-
+        
         copiedItem = id
-
+        
         DispatchQueue.main.asyncAfter(
             deadline: .now() + 1.2
         ) {
@@ -598,94 +699,94 @@ struct NetworkDetailView: View {
             }
         }
     }
-
+    
     // MARK: - Copy All
-
+    
     private func copyAll() {
-
+        
         var output = ""
-
+        
         output += """
         ** INFO **
-
+        
         [URL]
         \(log.url)
-
+        
         [Method]
         \(log.method)
-
+        
         [Status]
         \(log.statusCode ?? 0)
-
+        
         [Time interval]
         \(String(format: "%.8f", log.duration))
-
-
+        
+        
         """
-
+        
         output += """
         ** REQUEST **
         -- Headers --
-
+        
         """
-
+        
         for key in log.requestHeaders.keys.sorted() {
             output += """
             [\(key)]
             \(log.requestHeaders[key] ?? "")
-
+            
             """
         }
-
+        
         if let requestBody = log.requestBody {
             output += """
-
+            
             -- Body --
-
+            
             \(requestBody)
-
+            
             """
         }
-
+        
         output += """
-
+        
         ** RESPONSE **
         -- Headers --
-
+        
         """
-
+        
         for key in log.responseHeaders.keys.sorted() {
             output += """
             [\(key)]
             \(log.responseHeaders[key] ?? "")
-
+            
             """
         }
-
+        
         if let responseBody = log.responseBody {
             output += """
-
+            
             -- Body --
-
+            
             \(responseBody)
-
+            
             """
         }
-
+        
         UIPasteboard.general.setValue(
             output,
             forPasteboardType: "public.utf8-plain-text"
         )
-
+        
         print("COPY ALL:")
         print(output)
         print(
             "PASTEBOARD:",
             UIPasteboard.general.string ?? "NIL"
         )
-
+        
         copiedItem = "all"
-
+        
         DispatchQueue.main.asyncAfter(
             deadline: .now() + 1.2
         ) {

@@ -199,7 +199,10 @@ struct NetworkInspectorView: View {
             Text(log.url)
                 .font(DebugUIStyle.body)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
             
             Text(
                 timeFormatter.string(

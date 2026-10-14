@@ -17,6 +17,7 @@ final class DebugWindow: UIWindow {
             return nil
         }
 
+        // Menu debug sedang terbuka.
         if allowsFullInteraction {
             return hitView
         }

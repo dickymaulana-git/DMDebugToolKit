@@ -44,12 +44,16 @@ enum DebugUIStyle {
 
     /// Main accent used throughout the toolkit.
     static let accent = Color(
-        red: 0.35,
-        green: 0.32,
-        blue: 0.95
+        red: 4.0 / 255.0,
+        green: 98.0 / 255.0,
+        blue: 44.0 / 255.0
     )
 
-    static let accentSoft = accent.opacity(0.12)
+    static let accentSoft = Color(
+        red: 4.0 / 255.0,
+        green: 98.0 / 255.0,
+        blue: 44.0 / 255.0
+    ).opacity(0.12)
 
 
     /// Information / neutral action.
