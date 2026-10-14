@@ -222,7 +222,3 @@ DMDebugToolKit
 DMDebugToolKitMoya
 └── DebugMoyaPlugin
 ```
-
-## License
-
-See [LICENSE](LICENSE).
