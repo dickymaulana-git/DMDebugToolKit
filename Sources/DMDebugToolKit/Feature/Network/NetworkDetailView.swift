@@ -10,154 +10,162 @@ struct NetworkDetailView: View {
     private var presentationMode
     
     @State private var copiedItem: String?
-    
+    @State private var expandedSections: Set<String> = [
+        "INFO",
+        "REQUEST",
+        "RESPONSE"
+    ]
+    @State private var isActionMenuPresented = false
+
     var body: some View {
-        VStack(spacing: 0) {
-            
-            navigationHeader
-            
-            ScrollView {
-                VStack(
-                    alignment: .leading,
-                    spacing: 22
-                ) {
-                    
-                    // MARK: - INFO
-                    
-                    sectionContainer(
-                        title: "INFO",
-                        color: DebugUIStyle.accent
-                    ) {
-                        infoRow(
-                            title: "URL",
-                            value: log.url,
-                            copyID: "info-url"
-                        )
-                        
-                        infoRow(
-                            title: "Method",
-                            value: log.method,
-                            copyID: "info-method"
-                        )
-                        
-                        infoRow(
-                            title: "Status",
-                            value: "\(log.statusCode ?? 0)",
-                            copyID: "info-status"
-                        )
-                        
-                        infoRow(
-                            title: "Time interval",
-                            value: String(
-                                format: "%.8f",
-                                log.duration
-                            ),
-                            copyID: "info-duration"
-                        )
-                    }
-                    
-                    // MARK: - REQUEST
-                    
-                    sectionContainer(
-                        title: "REQUEST",
-                        color: DebugUIStyle.info
-                    ) {
-                        
-                        subsectionTitle(
-                            "Headers",
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 0) {
+                navigationHeader
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        // MARK: - INFO
+                        sectionContainer(
+                            title: "INFO",
+                            color: DebugUIStyle.accent
+                        ) {
+                            VStack(spacing: 0) {
+                                infoRow(
+                                    title: "URL",
+                                    value: log.url,
+                                    copyID: "info-url"
+                                )
+
+                                infoRow(
+                                    title: "Method",
+                                    value: log.method,
+                                    copyID: "info-method"
+                                )
+
+                                infoRow(
+                                    title: "Status",
+                                    value: "\(log.statusCode ?? 0)",
+                                    copyID: "info-status"
+                                )
+
+                                infoRow(
+                                    title: "Time interval",
+                                    value: String(
+                                        format: "%.8f",
+                                        log.duration
+                                    ),
+                                    copyID: "info-duration"
+                                )
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+
+                        // MARK: - REQUEST
+                        sectionContainer(
+                            title: "REQUEST",
                             color: DebugUIStyle.info
-                        )
-                        
-                        headersView(
-                            log.requestHeaders,
-                            color: DebugUIStyle.info,
-                            prefix: "request-header"
-                        )
-                        
-                        if let requestBody = log.requestBody {
-                            subsectionTitle(
-                                "Body",
-                                color: DebugUIStyle.info
-                            )
-                            
-                            bodyView(
-                                requestBody,
+                        ) {
+                            subsectionTitle("Headers", color: DebugUIStyle.info)
+
+                            headersView(
+                                log.requestHeaders,
                                 color: DebugUIStyle.info,
-                                copyID: "request-body"
+                                prefix: "request-header"
                             )
+
+                            if let requestBody = log.requestBody {
+                                subsectionTitle("Body", color: DebugUIStyle.info)
+
+                                bodyView(
+                                    requestBody,
+                                    color: DebugUIStyle.info,
+                                    copyID: "request-body"
+                                )
+                            }
                         }
-                    }
-                    
-                    // MARK: - RESPONSE
-                    
-                    sectionContainer(
-                        title: "RESPONSE",
-                        color: DebugUIStyle.success
-                    ) {
-                        
-                        subsectionTitle(
-                            "Headers",
+
+                        // MARK: - RESPONSE
+                        sectionContainer(
+                            title: "RESPONSE",
                             color: DebugUIStyle.success
-                        )
-                        
-                        headersView(
-                            log.responseHeaders,
-                            color: DebugUIStyle.success,
-                            prefix: "response-header"
-                        )
-                        
-                        if let responseBody = log.responseBody {
-                            subsectionTitle(
-                                "Body",
-                                color: DebugUIStyle.success
-                            )
-                            
-                            bodyView(
-                                responseBody,
+                        ) {
+                            subsectionTitle("Headers", color: DebugUIStyle.success)
+
+                            headersView(
+                                log.responseHeaders,
                                 color: DebugUIStyle.success,
-                                copyID: "response-body"
+                                prefix: "response-header"
                             )
+
+                            if let responseBody = log.responseBody {
+                                subsectionTitle("Body", color: DebugUIStyle.success)
+
+                                bodyView(
+                                    responseBody,
+                                    color: DebugUIStyle.success,
+                                    copyID: "response-body"
+                                )
+                            }
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 30)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 30)
+            }
+            .background(Color(.systemBackground))
+            .navigationBarHidden(true)
+
+            // Keep the dismissing backdrop and popup inside the same ZStack
+            // so the popup overlays the detail screen.
+            if isActionMenuPresented {
+                Color.black.opacity(0.001)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            isActionMenuPresented = false
+                        }
+                    }
+                    .zIndex(1)
+
+                actionMenuPopup
+                    .padding(.top, 48)
+                    .padding(.trailing, 16)
+                    .transition(
+                        .opacity.combined(
+                            with: .scale(
+                                scale: 0.95,
+                                anchor: .topTrailing
+                            )
+                        )
+                    )
+                    .zIndex(2)
             }
         }
-        .background(
-            Color(.systemBackground)
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
         .navigationBarHidden(true)
+        .animation(.easeOut(duration: 0.15), value: isActionMenuPresented)
     }
-    
+
     // MARK: - Navigation Header
     
     private var navigationHeader: some View {
-        
         HStack {
-            
             Button {
                 presentationMode.wrappedValue.dismiss()
             } label: {
-                
                 HStack(spacing: 5) {
-                    
                     Image(systemName: "chevron.left")
-                        .font(
-                            .system(
-                                size: 22,
-                                weight: .regular
-                            )
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(DebugUIStyle.success)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle()
+                                .fill(DebugUIStyle.success.opacity(0.10))
                         )
-                    
-                    Text("Back")
-                        .font(
-                            .system(
-                                size: 17,
-                                weight: .regular
-                            )
-                        )
+                        .contentShape(Circle())
                 }
                 .foregroundStyle(
                     DebugUIStyle.accent
@@ -169,38 +177,29 @@ struct NetworkDetailView: View {
             Text(urlTitle)
                 .font(
                     .system(
-                        size: 17,
+                        size: 14,
                         weight: .semibold
                     )
                 )
             
             Spacer()
             
-            Menu {
-                Button {
-                    copyAll()
-                } label: {
-                    Label("Copy All", systemImage: "doc.on.doc")
-                }
-                
-                Button {
-                    copyAsCurl()
-                } label: {
-                    Label("Copy as cURL", systemImage: "terminal")
-                }
-                
-                Button {
-                    shareJSON()
-                } label: {
-                    Label("Export JSON", systemImage: "doc.text")
+Button {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                    isActionMenuPresented.toggle()
                 }
             } label: {
-                Image(systemName: "square.and.arrow.down")
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(DebugUIStyle.accent)
-                    .frame(width: 36, height: 36)
-                    .contentShape(Rectangle())
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(DebugUIStyle.success)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(DebugUIStyle.success.opacity(0.10))
+                    )
+                    .contentShape(Circle())
             }
+            .buttonStyle(.plain)
             .frame(minWidth: 62, alignment: .trailing)
         }
         .padding(.horizontal, 16)
@@ -210,6 +209,102 @@ struct NetworkDetailView: View {
         )
     }
     
+    // MARK: - Custom Action Menu
+
+    private var actionMenuPopup: some View {
+        VStack(spacing: 0) {
+            actionMenuRow(
+                title: "Copy All",
+                subtitle: "Copy all request details",
+                icon: "doc.on.doc",
+                tint: DebugUIStyle.success
+            ) {
+                copyAll()
+            }
+
+            actionMenuDivider
+
+            actionMenuRow(
+                title: "Copy as cURL",
+                subtitle: "Copy command for debugging",
+                icon: "terminal",
+                tint: DebugUIStyle.info
+            ) {
+                copyAsCurl()
+            }
+
+            actionMenuDivider
+
+            actionMenuRow(
+                title: "Export JSON",
+                subtitle: "Share request details as JSON",
+                icon: "doc.text",
+                tint: DebugUIStyle.warning
+            ) {
+                shareJSON()
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 6)
+        .frame(width: 280)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.16), radius: 22, x: 0, y: 10)
+    }
+
+    private var actionMenuDivider: some View {
+        Divider()
+            .padding(.leading, 54)
+            .padding(.trailing, 8)
+    }
+
+    private func actionMenuRow(
+        title: String,
+        subtitle: String,
+        icon: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.15)) {
+                isActionMenuPresented = false
+            }
+
+            action()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(tint)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(tint.opacity(0.12))
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.primary)
+
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func shareJSON() {
         let activityVC = UIActivityViewController(
             activityItems: [exportJSON],
@@ -320,50 +415,75 @@ struct NetworkDetailView: View {
     
     // MARK: - Section
     
+    
+    
+    
     private func sectionContainer<Content: View>(
         title: String,
         color: Color,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        
-        VStack(
-            alignment: .leading,
-            spacing: 10
-        ) {
-            
-            HStack(spacing: 8) {
-                
-                Circle()
-                    .fill(color)
-                    .frame(
-                        width: 8,
-                        height: 8
-                    )
-                
-                Text(title)
-                    .font(
-                        .system(
-                            size: 14,
-                            weight: .bold
-                        )
-                    )
+        let isExpanded = expandedSections.contains(title)
+
+        return VStack(spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    if isExpanded {
+                        expandedSections.remove(title)
+                    } else {
+                        expandedSections.insert(title)
+                    }
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: {
+                        switch title {
+                        case "INFO": return "info.circle.fill"
+                        case "REQUEST": return "arrow.up.right.circle.fill"
+                        default: return "arrow.down.left.circle.fill"
+                        }
+                    }())
+                    .font(.system(size: 20))
                     .foregroundStyle(color)
-                
-                Rectangle()
-                    .fill(
-                        color.opacity(0.18)
-                    )
-                    .frame(height: 1)
+
+                    Text(title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(color)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(color)
+                        .rotationEffect(
+                            .degrees(isExpanded ? 0 : -90)
+                        )
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 13)
+                .contentShape(Rectangle())
             }
-            
-            VStack(
-                alignment: .leading,
-                spacing: 12
-            ) {
-                content()
+            .buttonStyle(.plain)
+            .background(color.opacity(0.07))
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    content()
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.opacity)
             }
         }
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 15))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(color.opacity(0.18), lineWidth: 1)
+        )
     }
+
+
     
     // MARK: - Subsection
     
@@ -401,57 +521,46 @@ struct NetworkDetailView: View {
     }
     
     // MARK: - Info Row
-    
     private func infoRow(
         title: String,
         value: String,
         copyID: String
     ) -> some View {
-        
-        VStack(
-            alignment: .leading,
-            spacing: 4
-        ) {
-            
-            HStack(alignment: .top) {
-                
-                Text("[\(title)]")
-                    .font(
-                        .system(
-                            size: 12,
-                            weight: .medium
-                        )
-                    )
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                copyButton(
-                    value: value.isEmpty ? "-" : value,
-                    id: copyID
-                )
-            }
-            
-            Text(value)
-                .font(DebugUIStyle.body)
+        HStack(alignment: .center, spacing: 8) {
+            Text(title)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 100, alignment: .leading)
+
+            Text(value.isEmpty ? "-" : value)
+                .font(.system(size: 12))
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .leading
-                )
+                .lineLimit(title == "URL" ? 3 : 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            copyButton(
+                value: value.isEmpty ? "-" : value,
+                id: copyID
+            )
         }
-        .padding(12)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(
-                cornerRadius: DebugUIStyle.cardRadius
-            )
-            .fill(
-                DebugUIStyle.cardBackground
-            )
+            DebugUIStyle.rowBackground(index: infoRowIndex(title))
         )
     }
     
+    private func infoRowIndex(_ title: String) -> Int {
+        switch title {
+        case "URL": return 0
+        case "Method": return 1
+        case "Status": return 2
+        default: return 3
+        }
+    }
     // MARK: - Headers
     
     private func headersView(
@@ -463,11 +572,8 @@ struct NetworkDetailView: View {
         let keys = headers.keys.sorted()
         
         return VStack(spacing: 0) {
-            
             if keys.isEmpty {
-                
                 HStack {
-                    
                     Text("No headers")
                         .font(DebugUIStyle.body)
                         .foregroundStyle(.secondary)
@@ -504,7 +610,7 @@ struct NetworkDetailView: View {
     }
     
     // MARK: - Header Row
-    
+
     private func headerRow(
         title: String,
         value: String,
@@ -512,48 +618,27 @@ struct NetworkDetailView: View {
         copyID: String,
         index: Int
     ) -> some View {
-        
-        VStack(
-            alignment: .leading,
-            spacing: 3
-        ) {
-            
-            HStack(alignment: .top) {
-                
-                Text("[\(title)]")
-                    .font(DebugUIStyle.caption)
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                copyButton(
-                    value: value,
-                    id: copyID
-                )
-            }
-            
-            Text(
-                value.isEmpty
-                ? "-"
-                : value
-            )
-            .font(DebugUIStyle.body)
-            .foregroundStyle(.primary)
-            .textSelection(.enabled)
-            .frame(
-                maxWidth: .infinity,
-                alignment: .leading
-            )
+        HStack(alignment: .center, spacing: 8) {
+            Text(title)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 130, alignment: .leading)
+
+            Text(value.isEmpty ? "-" : value)
+                .font(.system(size: 12))
+                .foregroundStyle(.primary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            copyButton(value: value, id: copyID)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
         .background(
-            DebugUIStyle.rowBackground(
-                index: index
-            )
+            DebugUIStyle.rowBackground(index: index)
         )
     }
-    
+
     // MARK: - Body
     
     private func bodyView(
@@ -589,12 +674,7 @@ struct NetworkDetailView: View {
             ) {
                 
                 Text(value)
-                    .font(
-                        .system(
-                            size: 11,
-                            design: .monospaced
-                        )
-                    )
+                    .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.primary)
                     .textSelection(.enabled)
                     .frame(

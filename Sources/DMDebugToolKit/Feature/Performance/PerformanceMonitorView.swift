@@ -14,73 +14,65 @@ struct PerformanceMonitorView: View {
         PerformanceMonitor.shared
 
     var body: some View {
-        ScrollView {
-            VStack(
-                spacing: DebugUIStyle.sectionSpacing
-            ) {
+        VStack(spacing: 0) {
+            navigationHeader
 
-                summaryLink
+            ScrollView {
+                VStack(
+                    spacing: DebugUIStyle.sectionSpacing
+                ) {
+                    summaryLink
 
-                VStack(spacing: 8) {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            metricCard(
+                                title: "FPS",
+                                value: String(format: "%.1f", fps),
+                                subtitle: "Current",
+                                health: PerformanceHealth.fps(fps),
+                                icon: "speedometer"
+                            )
 
-                    HStack(spacing: 8) {
-                        metricCard(
-                            title: "FPS",
-                            value: String(
-                                format: "%.1f",
-                                fps
-                            ),
-                            subtitle: "Current",
-                            health: PerformanceHealth.fps(fps),
-                            icon: "speedometer"
-                        )
+                            metricCard(
+                                title: "CPU",
+                                value: String(format: "%.1f%%", cpu),
+                                subtitle: String(
+                                    format: "Peak %.1f%%",
+                                    peakCPU
+                                ),
+                                health: PerformanceHealth.cpu(cpu),
+                                icon: "cpu"
+                            )
+                        }
 
-                        metricCard(
-                            title: "CPU",
-                            value: String(
-                                format: "%.1f%%",
-                                cpu
-                            ),
-                            subtitle: String(
-                                format: "Peak %.1f%%",
-                                peakCPU
-                            ),
-                            health: PerformanceHealth.cpu(cpu),
-                            icon: "cpu"
-                        )
+                        memoryCard
                     }
 
-                    memoryCard
-                }
+                    graphSection(
+                        title: "FPS History",
+                        icon: "chart.line.uptrend.xyaxis"
+                    ) {
+                        FPSGraphView(snapshots: snapshots)
+                            .frame(
+                                height: DebugUIStyle.graphHeight
+                            )
+                    }
 
-                graphSection(
-                    title: "FPS History",
-                    icon: "chart.line.uptrend.xyaxis"
-                ) {
-                    FPSGraphView(
-                        snapshots: snapshots
-                    )
-                    .frame(
-                        height: DebugUIStyle.graphHeight
-                    )
+                    graphSection(
+                        title: "CPU History",
+                        icon: "waveform.path.ecg"
+                    ) {
+                        CPUGraphView(snapshots: snapshots)
+                            .frame(
+                                height: DebugUIStyle.graphHeight
+                            )
+                    }
                 }
-
-                graphSection(
-                    title: "CPU History",
-                    icon: "waveform.path.ecg"
-                ) {
-                    CPUGraphView(
-                        snapshots: snapshots
-                    )
-                    .frame(
-                        height: DebugUIStyle.graphHeight
-                    )
-                }
+                .padding(DebugUIStyle.screenPadding)
             }
-            .padding(DebugUIStyle.screenPadding)
         }
-        .navigationTitle("Performance Monitor")
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Color(uiColor: .systemBackground))
+        .navigationBarHidden(true)
         .onAppear {
             monitor.start()
             MemoryMonitor.shared.start()
@@ -96,9 +88,31 @@ struct PerformanceMonitorView: View {
                     nanoseconds: 1_000_000_000
                 )
 
+                guard !Task.isCancelled else { break }
                 update()
             }
         }
+    }
+    
+    private var navigationHeader: some View {
+        HStack {
+            DebugBackButton()
+
+            Spacer()
+
+            Color.clear
+                .frame(width: 40, height: 40)
+        }
+        .overlay {
+            Text("Performance Monitor")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+                .allowsHitTesting(false)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color(uiColor: .systemBackground))
     }
 
     // MARK: - Summary
@@ -405,3 +419,14 @@ struct PerformanceMonitorView: View {
             MemoryMonitor.shared.snapshots
     }
 }
+
+#if DEBUG
+struct PerformanceMonitorView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            PerformanceMonitorView()
+        }
+        .navigationViewStyle(.stack)
+    }
+}
+#endif
