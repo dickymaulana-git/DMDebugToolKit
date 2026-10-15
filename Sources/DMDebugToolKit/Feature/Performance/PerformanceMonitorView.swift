@@ -111,7 +111,7 @@ struct PerformanceMonitorView: View {
                 .allowsHitTesting(false)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 16)
         .background(Color(uiColor: .systemBackground))
     }
 

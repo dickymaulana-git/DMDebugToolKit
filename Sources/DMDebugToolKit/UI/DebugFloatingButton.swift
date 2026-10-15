@@ -107,11 +107,11 @@ final class DebugFloatingButton: UIButton {
 
         environmentLabel.font =
             .systemFont(
-                ofSize: 18,
-                weight: .heavy
+                ofSize: 14,
+                weight: .semibold
             )
 
-        environmentLabel.textColor = .yellow
+        environmentLabel.textColor = .white
         environmentLabel.textAlignment = .center
         environmentLabel.isUserInteractionEnabled = false
 
@@ -193,7 +193,7 @@ private struct DebugFloatingButtonPreview: UIViewRepresentable {
                 in: Bundle.module,
                 compatibleWith: nil
             ),
-            environment: environment
+            environment: .uat
         )
     }
 

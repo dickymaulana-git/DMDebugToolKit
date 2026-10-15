@@ -1,21 +1,20 @@
-// PerformanceHealth.swift
 
 import SwiftUI
 
 enum PerformanceHealth {
-
+    case collecting
     case healthy
     case warning
     case critical
 
     var title: String {
         switch self {
+        case .collecting:
+            return "Collecting"
         case .healthy:
             return "Healthy"
-
         case .warning:
             return "Warning"
-
         case .critical:
             return "Critical"
         }
@@ -23,80 +22,54 @@ enum PerformanceHealth {
 
     var color: Color {
         switch self {
+        case .collecting:
+            return .secondary
         case .healthy:
-            return DebugUIStyle.success
-
+            return .green
         case .warning:
-            return DebugUIStyle.warning
-
+            return .orange
         case .critical:
-            return DebugUIStyle.critical
+            return .red
         }
     }
 
-    static func fps(
-        _ value: Double
-    ) -> PerformanceHealth {
-
-        if value >= 55 {
-            return .healthy
-        }
-
-        if value >= 45 {
-            return .warning
-        }
-
+    static func fps(_ value: Double) -> PerformanceHealth {
+        if value >= 55 { return .healthy }
+        if value >= 45 { return .warning }
         return .critical
     }
 
-    static func cpu(
-        _ value: Double
-    ) -> PerformanceHealth {
-
-        if value < 50 {
-            return .healthy
-        }
-
-        if value <= 80 {
-            return .warning
-        }
-
+    static func cpu(_ value: Double) -> PerformanceHealth {
+        if value < 50 { return .healthy }
+        if value <= 80 { return .warning }
         return .critical
     }
 
     static func memory(
         snapshots: [MemorySnapshot]
     ) -> PerformanceHealth {
+        let window = Array(snapshots.suffix(30))
 
-        guard snapshots.count >= 10,
-              let first = snapshots.first,
-              let latest = snapshots.last
-        else {
+        guard window.count >= 15 else {
+            return .collecting
+        }
+
+        let baseline = Array(window.prefix(5)).map(\.usedMB)
+        let recent = Array(window.suffix(5)).map(\.usedMB)
+
+        let baselineAverage =
+            baseline.reduce(0, +) / Double(baseline.count)
+
+        let recentAverage =
+            recent.reduce(0, +) / Double(recent.count)
+
+        let growth = recentAverage - baselineAverage
+
+        if growth <= 20 {
             return .healthy
         }
 
-        let growth =
-            latest.usedMB - first.usedMB
-
-        let duration =
-            latest.timestamp.timeIntervalSince(
-                first.timestamp
-            )
-
-        guard duration > 0 else {
-            return .healthy
-        }
-
-        let growthPerMinute =
-            growth / duration * 60
-
-        // Memory naik sangat sedikit / stabil
-        if growthPerMinute < 5 {
-            return .healthy
-        }
-
-        // Naik tetapi belum ekstrem
-        if growthPerMinute < 15 {
+        if growth <= 50 {
             return .warning
         }
 
@@ -106,13 +79,17 @@ enum PerformanceHealth {
     static func overall(
         _ healths: [PerformanceHealth]
     ) -> PerformanceHealth {
-
         if healths.contains(.critical) {
             return .critical
         }
 
         if healths.contains(.warning) {
             return .warning
+        }
+
+        if !healths.isEmpty &&
+            healths.allSatisfy({ $0 == .collecting }) {
+            return .collecting
         }
 
         return .healthy
