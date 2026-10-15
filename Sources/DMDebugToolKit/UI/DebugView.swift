@@ -2,17 +2,16 @@ import SwiftUI
 
 struct DebugView: View {
     private static let appVersion = "1.0.2"
-    
+
     var body: some View {
         NavigationView {
-            GeometryReader { geometry in
-                VStack(spacing: 0) {
-                    List {
-                        // MARK: - Network
-                        section(
-                            title: "Network",
-                            color: DebugUIStyle.info
-                        ) {
+            VStack(spacing: 0) {
+                ScrollView(showsIndicators: false) {
+                    VStack(
+                        alignment: .leading,
+                        spacing: 28
+                    ) {
+                        section(title: "Network") {
                             navigationRow(
                                 title: "Network Inspector",
                                 subtitle: "HTTP request and response logs",
@@ -22,16 +21,13 @@ struct DebugView: View {
                                 NetworkInspectorView()
                             }
                         }
-                        // MARK: - Performance
-                        section(
-                            title: "Performance",
-                            color: DebugUIStyle.accent
-                        ) {
+
+                        section(title: "Performance") {
                             navigationRow(
                                 title: "Performance Monitor",
                                 subtitle: "FPS, CPU and memory usage",
                                 icon: "speedometer",
-                                color: DebugUIStyle.accent
+                                color: DebugUIStyle.success
                             ) {
                                 PerformanceMonitorView()
                             }
@@ -45,11 +41,8 @@ struct DebugView: View {
                                 MemoryMonitorView()
                             }
                         }
-                        // MARK: - Debug
-                        section(
-                            title: "Debug",
-                            color: DebugUIStyle.warning
-                        ) {
+
+                        section(title: "Debug") {
                             navigationRow(
                                 title: "Logs",
                                 subtitle: "Application debug logs",
@@ -69,47 +62,38 @@ struct DebugView: View {
                             }
                         }
                     }
-                    .listStyle(.plain)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(
-                        EdgeInsets(
-                            top: 4,
-                            leading: 16,
-                            bottom: 4,
-                            trailing: 16
-                        )
-                    )
-                    
-                    versionFooter
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+                    .padding(.bottom, 24)
                 }
-                .frame(
-                    width: geometry.size.width,
-                    height: geometry.size.height
-                )
-                .background(Color(uiColor: .systemBackground))
+
+                versionFooter
             }
+            .padding(.top, 16)
+            .background(Color(uiColor: .systemBackground))
+            .navigationBarHidden(true)
         }
+        .navigationViewStyle(.stack)
     }
 
     // MARK: - Section
 
     private func section<Content: View>(
         title: String,
-        color: Color,
         @ViewBuilder content: () -> Content
     ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: 10
+        ) {
+            Text(title)
+                .font(DebugUIStyle.sectionTitle)
+                .foregroundStyle(.secondary)
+                .padding(.leading, 2)
 
-        Section {
-            content()
-                .listRowSeparator(.hidden)
-        } header: {
-
-            HStack(spacing: 0) {
-                Text(title)
-                    .font(DebugUIStyle.sectionTitle)
-                    .foregroundStyle(.primary)
+            VStack(spacing: 8) {
+                content()
             }
-            .textCase(nil)
         }
     }
 
@@ -122,63 +106,83 @@ struct DebugView: View {
         color: Color,
         @ViewBuilder destination: () -> Destination
     ) -> some View {
-
         NavigationLink {
             destination()
         } label: {
-
-            HStack(spacing: 12) {
-
+            HStack(spacing: 14) {
                 Image(systemName: icon)
                     .font(
                         .system(
-                            size: 16,
+                            size: 14,
                             weight: .semibold
                         )
                     )
                     .foregroundStyle(color)
-                    .frame(
-                        width: 36,
-                        height: 36
-                    )
+                    .frame(width: 44, height: 44)
                     .background(
                         Circle()
-                            .fill(
-                                color.opacity(0.12)
-                            )
+                            .fill(color.opacity(0.12))
                     )
 
                 VStack(
                     alignment: .leading,
-                    spacing: 3
+                    spacing: 4
                 ) {
-
                     Text(title)
                         .font(DebugUIStyle.bodyMedium)
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
 
                     Text(subtitle)
                         .font(DebugUIStyle.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
                 }
 
-                Spacer()
+                Spacer(minLength: 4)
+
+                Image(systemName: "chevron.right")
+                    .font(
+                        .system(
+                            size: 14,
+                            weight: .semibold
+                        )
+                    )
+                    .foregroundStyle(.tertiary)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(uiColor: .secondarySystemBackground))
+            )
+            .contentShape(
+                RoundedRectangle(cornerRadius: 20)
+            )
         }
+        .buttonStyle(.plain)
     }
-    
+
+    // MARK: - Footer
+
     private var versionFooter: some View {
         VStack(spacing: 5) {
             Text("DM Debug Toolkit")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Text("Version \(Self.appVersion)")
-                .font(.system(size: 11, weight: .regular))
+                .font(.system(size: 12))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 20)
         .background(Color(uiColor: .systemBackground))
     }
 }
@@ -191,8 +195,11 @@ struct DebugView_Previews: PreviewProvider {
                 .ignoresSafeArea()
 
             VStack {
-                Text("Demo App")
-                    .font(.largeTitle)
+                HStack {
+                    Text("Demo App")
+                        .font(.largeTitle)
+                    Spacer()
+                }
 
                 Spacer()
             }

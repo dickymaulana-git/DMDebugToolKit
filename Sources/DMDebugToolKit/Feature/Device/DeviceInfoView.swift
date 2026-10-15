@@ -72,7 +72,12 @@ struct DeviceInfoView: View {
         }
         .overlay {
             Text("Device Info")
-                .font(.system(size: 18, weight: .semibold))
+                .font(
+                    .system(
+                        size: 16,
+                        weight: .medium
+                    )
+                )
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .allowsHitTesting(false)

@@ -1,3 +1,4 @@
+
 import UIKit
 import SwiftUI
 
@@ -11,12 +12,23 @@ final class DebugViewController: UIViewController {
     private let sheetState = DebugSheetState()
 
     private var hasInitialPosition = false
+    private var dragStartCenter: CGPoint = .zero
+    private var isDragging = false
+
+    private let buttonSize: CGFloat = 52
+    private let edgeMargin: CGFloat = 12
+    private let dragThreshold: CGFloat = 8
+
+    private let positionXKey =
+        "DMDebugToolkit.FloatingButton.PositionX"
+
+    private let positionYKey =
+        "DMDebugToolkit.FloatingButton.PositionY"
 
     init(
         buttonImage: UIImage?,
         environment: DebugToolkitEnvironment
     ) {
-
         floatingButton = DebugFloatingButton(
             image: buttonImage,
             environment: environment
@@ -29,7 +41,6 @@ final class DebugViewController: UIViewController {
     }
 
     required init?(coder: NSCoder) {
-
         floatingButton = DebugFloatingButton(
             image: nil,
             environment: .dev
@@ -60,30 +71,34 @@ final class DebugViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        guard !hasInitialPosition else {
+        guard
+            view.bounds.width > 0,
+            view.bounds.height > 0
+        else {
             return
         }
 
-        hasInitialPosition = true
+        if !hasInitialPosition {
+            hasInitialPosition = true
 
-        let size: CGFloat = 52
-        let margin: CGFloat = 16
+            floatingButton.frame = CGRect(
+                x: 0,
+                y: 0,
+                width: buttonSize,
+                height: buttonSize
+            )
 
-        floatingButton.frame = CGRect(
-            x: view.bounds.width - size - margin,
-            y: view.bounds.height
-                - size
-                - view.safeAreaInsets.bottom
-                - margin,
-            width: size,
-            height: size
-        )
+            restoreOrSetInitialPosition()
+        } else {
+            floatingButton.center = clampedCenter(
+                floatingButton.center
+            )
+        }
     }
 
     // MARK: - Sheet Host
 
     private func setupSheetHost() {
-
         let host = UIHostingController(
             rootView: DebugSheetHostView(
                 state: sheetState
@@ -124,6 +139,12 @@ final class DebugViewController: UIViewController {
     // MARK: - Floating Button
 
     private func setupFloatingButton() {
+        floatingButton.frame = CGRect(
+            x: 0,
+            y: 0,
+            width: buttonSize,
+            height: buttonSize
+        )
 
         view.addSubview(floatingButton)
 
@@ -138,11 +159,51 @@ final class DebugViewController: UIViewController {
             action: #selector(handlePan(_:))
         )
 
-        panGesture.cancelsTouchesInView = false
+        // Drag cancels the button's touch tracking.
+        // A normal tap still triggers .touchUpInside.
+        panGesture.cancelsTouchesInView = true
+        panGesture.minimumNumberOfTouches = 1
+        panGesture.maximumNumberOfTouches = 1
 
-        floatingButton.addGestureRecognizer(
-            panGesture
+        floatingButton.addGestureRecognizer(panGesture)
+    }
+
+    // MARK: - Initial Position
+
+    private func restoreOrSetInitialPosition() {
+        let defaults = UserDefaults.standard
+
+        if
+            defaults.object(forKey: positionXKey) != nil,
+            defaults.object(forKey: positionYKey) != nil
+        {
+            floatingButton.center = CGPoint(
+                x: defaults.double(forKey: positionXKey)
+                    * view.bounds.width,
+                y: defaults.double(forKey: positionYKey)
+                    * view.bounds.height
+            )
+        } else {
+            // First launch: top-right, inside the safe area.
+            let safeInsets = view.safeAreaInsets
+
+            floatingButton.center = CGPoint(
+                x: view.bounds.maxX
+                    - safeInsets.right
+                    - edgeMargin
+                    - buttonSize / 2,
+                y: view.bounds.minY
+                    + safeInsets.top
+                    + edgeMargin
+                    + buttonSize / 2
+            )
+        }
+
+        floatingButton.center = clampedCenter(
+            floatingButton.center
         )
+
+        savePosition()
     }
 
     // MARK: - Drag
@@ -151,116 +212,175 @@ final class DebugViewController: UIViewController {
     private func handlePan(
         _ gesture: UIPanGestureRecognizer
     ) {
+        switch gesture.state {
+        case .began:
+            dragStartCenter = floatingButton.center
+            isDragging = false
 
-        guard let button = gesture.view else {
-            return
-        }
+        case .changed:
+            let translation = gesture.translation(in: view)
 
-        let translation = gesture.translation(
-            in: view
-        )
+            if hypot(
+                translation.x,
+                translation.y
+            ) >= dragThreshold {
+                isDragging = true
+            }
 
-        button.center = CGPoint(
-            x: button.center.x + translation.x,
-            y: button.center.y + translation.y
-        )
+            guard isDragging else {
+                return
+            }
 
-        gesture.setTranslation(
-            .zero,
-            in: view
-        )
+            let proposedCenter = CGPoint(
+                x: dragStartCenter.x + translation.x,
+                y: dragStartCenter.y + translation.y
+            )
 
-        clampButtonToScreen()
+            floatingButton.center = clampedCenter(
+                proposedCenter
+            )
 
-        if gesture.state == .ended ||
-            gesture.state == .cancelled ||
-            gesture.state == .failed {
+        case .ended:
+            guard isDragging else {
+                return
+            }
+
+            let translation = gesture.translation(in: view)
+
+            floatingButton.center = clampedCenter(
+                CGPoint(
+                    x: dragStartCenter.x + translation.x,
+                    y: dragStartCenter.y + translation.y
+                )
+            )
 
             snapButtonToEdge()
+            isDragging = false
+
+        case .cancelled, .failed:
+            if isDragging {
+                snapButtonToEdge()
+            }
+
+            isDragging = false
+
+        default:
+            break
         }
     }
 
-    private func clampButtonToScreen() {
+    // MARK: - Clamp To Safe Area
 
-        let halfWidth =
-            floatingButton.bounds.width / 2
+    private func clampedCenter(
+        _ proposedCenter: CGPoint
+    ) -> CGPoint {
+        let bounds = view.bounds
+        let safeInsets = view.safeAreaInsets
 
-        let halfHeight =
-            floatingButton.bounds.height / 2
+        let halfWidth = floatingButton.bounds.width / 2
+        let halfHeight = floatingButton.bounds.height / 2
 
-        let minX = halfWidth + 8
+        let minX = safeInsets.left
+            + edgeMargin
+            + halfWidth
 
-        let maxX =
-            view.bounds.width
+        let maxX = bounds.width
+            - safeInsets.right
+            - edgeMargin
             - halfWidth
-            - 8
 
-        let minY =
-            view.safeAreaInsets.top
+        let minY = safeInsets.top
+            + edgeMargin
             + halfHeight
-            + 8
 
-        let maxY =
-            view.bounds.height
-            - view.safeAreaInsets.bottom
+        let maxY = bounds.height
+            - safeInsets.bottom
+            - edgeMargin
             - halfHeight
-            - 8
 
-        floatingButton.center.x = min(
-            max(
-                floatingButton.center.x,
-                minX
+        return CGPoint(
+            x: min(
+                max(proposedCenter.x, minX),
+                max(maxX, minX)
             ),
-            maxX
-        )
-
-        floatingButton.center.y = min(
-            max(
-                floatingButton.center.y,
-                minY
-            ),
-            maxY
+            y: min(
+                max(proposedCenter.y, minY),
+                max(maxY, minY)
+            )
         )
     }
 
+    // MARK: - Snap To Nearest Edge
+
     private func snapButtonToEdge() {
+        let halfWidth = floatingButton.bounds.width / 2
+        let safeInsets = view.safeAreaInsets
 
-        let halfWidth =
-            floatingButton.bounds.width / 2
+        let leftX = safeInsets.left
+            + edgeMargin
+            + halfWidth
 
-        let leftX =
-            halfWidth + 8
-
-        let rightX =
-            view.bounds.width
+        let rightX = view.bounds.width
+            - safeInsets.right
+            - edgeMargin
             - halfWidth
-            - 8
 
-        let targetX =
-            floatingButton.center.x
-                < view.bounds.width / 2
-                ? leftX
-                : rightX
+        let targetX = floatingButton.center.x
+            < view.bounds.midX
+            ? leftX
+            : rightX
+
+        let target = clampedCenter(
+            CGPoint(
+                x: targetX,
+                y: floatingButton.center.y
+            )
+        )
 
         UIView.animate(
             withDuration: 0.25,
             delay: 0,
+            usingSpringWithDamping: 0.85,
+            initialSpringVelocity: 0.4,
             options: [
                 .curveEaseOut,
-                .beginFromCurrentState
+                .beginFromCurrentState,
+                .allowUserInteraction
             ]
         ) {
-
-            self.floatingButton.center.x =
-                targetX
+            self.floatingButton.center = target
+        } completion: { [weak self] _ in
+            self?.savePosition()
         }
+    }
+
+    // MARK: - Save Position
+
+    private func savePosition() {
+        guard
+            view.bounds.width > 0,
+            view.bounds.height > 0
+        else {
+            return
+        }
+
+        let defaults = UserDefaults.standard
+
+        defaults.set(
+            Double(floatingButton.center.x / view.bounds.width),
+            forKey: positionXKey
+        )
+
+        defaults.set(
+            Double(floatingButton.center.y / view.bounds.height),
+            forKey: positionYKey
+        )
     }
 
     // MARK: - Debug Menu
 
     @objc
     private func openDebugMenu() {
-
         if let debugWindow = view.window as? DebugWindow {
             debugWindow.allowsFullInteraction = true
         }

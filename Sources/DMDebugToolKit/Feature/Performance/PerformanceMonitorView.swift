@@ -105,13 +105,18 @@ struct PerformanceMonitorView: View {
         }
         .overlay {
             Text("Performance Monitor")
-                .font(.system(size: 18, weight: .semibold))
+                .font(
+                    .system(
+                        size: 16,
+                        weight: .medium
+                    )
+                )
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .allowsHitTesting(false)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 16)
         .background(Color(uiColor: .systemBackground))
     }
 

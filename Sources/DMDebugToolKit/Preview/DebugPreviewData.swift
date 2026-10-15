@@ -89,6 +89,176 @@ enum DebugPreviewData {
             }
             """
         ),
+        NetworkLog(
+            id: UUID(),
+            timestamp: Date().addingTimeInterval(-18),
+            method: "POST",
+            url: "https://api.example.com/v1/login",
+            statusCode: 200,
+            duration: 0.182,
+            requestHeaders: [
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-App-Version": "1.0.0"
+            ],
+            requestBody: """
+            {
+              "username": "demo@example.com",
+              "password": "***"
+            }
+            """,
+            responseHeaders: [
+                "Content-Type": "application/json",
+                "Content-Length": "184"
+            ],
+            responseBody: """
+            {
+              "success": true,
+              "token": "***",
+              "expiresIn": 3600,
+              "user": {
+                "id": 1001,
+                "name": "Demo User"
+              }
+            }
+            """
+        ),
+        NetworkLog(
+            id: UUID(),
+            timestamp: Date().addingTimeInterval(-18),
+            method: "POST",
+            url: "https://api.example.com/v1/login",
+            statusCode: 200,
+            duration: 0.182,
+            requestHeaders: [
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-App-Version": "1.0.0"
+            ],
+            requestBody: """
+            {
+              "username": "demo@example.com",
+              "password": "***"
+            }
+            """,
+            responseHeaders: [
+                "Content-Type": "application/json",
+                "Content-Length": "184"
+            ],
+            responseBody: """
+            {
+              "success": true,
+              "token": "***",
+              "expiresIn": 3600,
+              "user": {
+                "id": 1001,
+                "name": "Demo User"
+              }
+            }
+            """
+        ),
+        NetworkLog(
+            id: UUID(),
+            timestamp: Date().addingTimeInterval(-18),
+            method: "POST",
+            url: "https://api.example.com/v1/login",
+            statusCode: 200,
+            duration: 0.182,
+            requestHeaders: [
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-App-Version": "1.0.0"
+            ],
+            requestBody: """
+            {
+              "username": "demo@example.com",
+              "password": "***"
+            }
+            """,
+            responseHeaders: [
+                "Content-Type": "application/json",
+                "Content-Length": "184"
+            ],
+            responseBody: """
+            {
+              "success": true,
+              "token": "***",
+              "expiresIn": 3600,
+              "user": {
+                "id": 1001,
+                "name": "Demo User"
+              }
+            }
+            """
+        ),
+        NetworkLog(
+            id: UUID(),
+            timestamp: Date().addingTimeInterval(-18),
+            method: "POST",
+            url: "https://api.example.com/v1/login",
+            statusCode: 200,
+            duration: 0.182,
+            requestHeaders: [
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-App-Version": "1.0.0"
+            ],
+            requestBody: """
+            {
+              "username": "demo@example.com",
+              "password": "***"
+            }
+            """,
+            responseHeaders: [
+                "Content-Type": "application/json",
+                "Content-Length": "184"
+            ],
+            responseBody: """
+            {
+              "success": true,
+              "token": "***",
+              "expiresIn": 3600,
+              "user": {
+                "id": 1001,
+                "name": "Demo User"
+              }
+            }
+            """
+        ),
+        NetworkLog(
+            id: UUID(),
+            timestamp: Date().addingTimeInterval(-18),
+            method: "POST",
+            url: "https://api.example.com/v1/login",
+            statusCode: 200,
+            duration: 0.182,
+            requestHeaders: [
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-App-Version": "1.0.0"
+            ],
+            requestBody: """
+            {
+              "username": "demo@example.com",
+              "password": "***"
+            }
+            """,
+            responseHeaders: [
+                "Content-Type": "application/json",
+                "Content-Length": "184"
+            ],
+            responseBody: """
+            {
+              "success": true,
+              "token": "***",
+              "expiresIn": 3600,
+              "user": {
+                "id": 1001,
+                "name": "Demo User"
+              }
+            }
+            """
+        ),
 
         NetworkLog(
             id: UUID(),
