@@ -409,7 +409,6 @@ struct NetworkInspectorView: View {
         _ log: NetworkLog,
         index: Int
     ) -> some View {
-        let parts = splitURL(log.url)
 
         return HStack(spacing: 0) {
             RoundedRectangle(cornerRadius: 2)
@@ -435,35 +434,13 @@ struct NetworkInspectorView: View {
                         durationView(log.duration)
                     }
 
-                    // Host
-                    Text(parts.host)
-                        .font(
-                            .system(
-                                size: 13,
-                                weight: .medium
-                            )
-                        )
+                    Text(log.url)
+                        .font(.system(size: 13))
                         .foregroundColor(.primary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                        .frame(
-                            maxWidth: .infinity,
-                            alignment: .leading
-                        )
-
-                    // Path
-                    if !parts.path.isEmpty {
-                        Text(parts.path)
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .frame(
-                                maxWidth: .infinity,
-                                alignment: .leading
-                            )
-                            .textSelection(.enabled)
-                    }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
 
                     // Timestamp
                     HStack(spacing: 6) {
@@ -508,37 +485,6 @@ struct NetworkInspectorView: View {
                 .frame(height: 0.5)
                 .padding(.leading, 36)
         }
-    }
-
-    // MARK: - URL Formatting
-
-    private func splitURL(
-        _ rawURL: String
-    ) -> (host: String, path: String) {
-        guard
-            let components = URLComponents(string: rawURL),
-            let host = components.host
-        else {
-            return (rawURL, "")
-        }
-
-        let hostWithPort: String
-
-        if let port = components.port {
-            hostWithPort = "\(host):\(port)"
-        } else {
-            hostWithPort = host
-        }
-
-        let path = components.percentEncodedPath
-        let query = components.percentEncodedQuery.map {
-            "?\($0)"
-        } ?? ""
-
-        return (
-            hostWithPort,
-            path + query
-        )
     }
 
     // MARK: - Method Badge
