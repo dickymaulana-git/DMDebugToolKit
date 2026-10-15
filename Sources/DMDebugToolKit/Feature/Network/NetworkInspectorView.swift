@@ -11,6 +11,12 @@ struct NetworkInspectorView: View {
     private let previewLogs: [NetworkLog]?
     private let recorder = NetworkRecorder.shared
 
+    @State private var selectedLog: NetworkLog?
+    @State private var isDetailActive = false
+    @State private var rowDragDistance: CGFloat = 0
+
+    private let tapMovementThreshold: CGFloat = 10
+    
     private let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
@@ -388,19 +394,30 @@ struct NetworkInspectorView: View {
                     Array(filteredLogs.enumerated()),
                     id: \.element.id
                 ) { index, log in
-                    NavigationLink {
-                        NetworkDetailView(log: log)
-                    } label: {
-                        networkRow(log, index: index)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                    networkRow(log, index: index)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedLog = log
+                            isDetailActive = true
+                        }
                 }
             }
         }
         .background(
             Color(uiColor: .systemGroupedBackground)
         )
+        .background {
+            NavigationLink(
+                isActive: $isDetailActive
+            ) {
+                if let selectedLog {
+                    NetworkDetailView(log: selectedLog)
+                }
+            } label: {
+                EmptyView()
+            }
+            .hidden()
+        }
     }
 
     // MARK: - Network Row
@@ -423,7 +440,6 @@ struct NetworkInspectorView: View {
                     alignment: .leading,
                     spacing: 8
                 ) {
-                    // Method, status and duration
                     HStack(spacing: 7) {
                         methodBadge(log.method, log.statusCode)
 
@@ -435,9 +451,9 @@ struct NetworkInspectorView: View {
                     }
 
                     Text(log.url)
-                        .font(.system(size: 13))
+                        .font(.system(size: 12))
                         .foregroundColor(.primary)
-                        .lineLimit(1)
+                        .lineLimit(nil)
                         .truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)

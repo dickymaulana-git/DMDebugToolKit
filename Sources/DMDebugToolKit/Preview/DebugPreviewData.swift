@@ -12,7 +12,7 @@ enum DebugPreviewData {
             id: UUID(),
             timestamp: Date().addingTimeInterval(-12),
             method: "GET",
-            url: "https://jsonplaceholder.typicode.com/users/1",
+            url: "https://jsonplaceholder.typicode.com/users/1typicode.com/users/1typicode.com/users/1typicode.com/users/1",
             statusCode: 200,
             duration: 0.034,
             requestHeaders: [

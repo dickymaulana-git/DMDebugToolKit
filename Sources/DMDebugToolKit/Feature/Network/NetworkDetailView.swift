@@ -5,7 +5,9 @@ import UIKit
 struct NetworkDetailView: View {
 
     let log: NetworkLog
-
+    @State private var showCopyToast = false
+    @State private var copyToastMessage = "Berhasil disalin"
+    
     @Environment(\.presentationMode)
     private var presentationMode
 
@@ -37,9 +39,15 @@ struct NetworkDetailView: View {
                         ) {
                             VStack(spacing: 6) {
                                 infoRow(
-                                    title: "URL",
-                                    value: log.url,
-                                    copyID: "info-url"
+                                    title: "BASE URL",
+                                    value: baseURL,
+                                    copyID: "info-base-url"
+                                )
+                                
+                                infoRow(
+                                    title: "ENDPOINT",
+                                    value: endpoint,
+                                    copyID: "info-endpoint"
                                 )
 
                                 infoRow(
@@ -162,6 +170,32 @@ struct NetworkDetailView: View {
                     )
                     .zIndex(2)
             }
+            if showCopyToast {
+                VStack {
+                    Spacer()
+
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.white)
+
+                        Text(copyToastMessage)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        Color.green.opacity(0.95),
+                        in: Capsule()
+                    )
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+                .zIndex(10)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemBackground))
@@ -172,6 +206,45 @@ struct NetworkDetailView: View {
         )
     }
 
+    private func showCopySuccess(_ message: String = "Berhasil disalin") {
+        copyToastMessage = message
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            showCopyToast = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                showCopyToast = false
+            }
+        }
+    }
+    
+    // MARK: - URL Components
+
+    private var baseURL: String {
+        guard let components = URLComponents(string: log.url),
+              let scheme = components.scheme,
+              let host = components.host else {
+            return log.url
+        }
+
+        let port = components.port.map { ":\($0)" } ?? ""
+
+        return "\(scheme)://\(host)\(port)"
+    }
+
+    private var endpoint: String {
+        guard let components = URLComponents(string: log.url) else {
+            return ""
+        }
+
+        let path = components.path
+        let query = components.percentEncodedQuery.map { "?\($0)" } ?? ""
+
+        return path + query
+    }
+    
     // MARK: - Navigation Header
 
     private var navigationHeader: some View {
@@ -261,6 +334,7 @@ struct NetworkDetailView: View {
                 tint: DebugUIStyle.success
             ) {
                 copyAll()
+                showCopySuccess("Semua detail berhasil disalin")
             }
 
             actionMenuDivider
@@ -272,6 +346,7 @@ struct NetworkDetailView: View {
                 tint: DebugUIStyle.info
             ) {
                 copyAsCurl()
+                showCopySuccess("cURL berhasil disalin")
             }
 
             actionMenuDivider
@@ -283,6 +358,7 @@ struct NetworkDetailView: View {
                 tint: DebugUIStyle.warning
             ) {
                 shareJSON()
+                showCopySuccess("JSON berhasil disalin")
             }
         }
         .padding(6)
@@ -603,15 +679,13 @@ struct NetworkDetailView: View {
     }
 
     private func infoRowIndex(_ title: String) -> Int {
-        switch title {
-        case "URL":
+        switch title.uppercased() {
+        case "URL", "BASE URL", "METHOD":
             return 0
-        case "Method":
+        case "ENDPOINT", "STATUS":
             return 1
-        case "Status":
-            return 2
         default:
-            return 3
+            return 2
         }
     }
 
@@ -839,7 +913,7 @@ struct NetworkDetailView: View {
 
         UIPasteboard.general.string = value
         copiedItem = id
-
+        showCopySuccess()
         DispatchQueue.main.asyncAfter(
             deadline: .now() + 1.2
         ) {
