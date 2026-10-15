@@ -8,13 +8,8 @@ struct NetworkInspectorView: View {
     @State private var searchText = ""
     @State private var selectedFilter: StatusFilter = .all
 
-    @State private var selectedLog: NetworkLog?
-    @State private var isDetailActive = false
-
     private let previewLogs: [NetworkLog]?
     private let recorder = NetworkRecorder.shared
-
-    private let tapMovementThreshold: CGFloat = 10
 
     private let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -22,17 +17,13 @@ struct NetworkInspectorView: View {
         return formatter
     }()
 
-    // MARK: - Status Filter
-
     private enum StatusFilter: String, CaseIterable, Identifiable {
         case all = "All"
         case success = "2xx"
         case clientError = "4xx"
         case serverError = "5xx"
 
-        var id: String {
-            rawValue
-        }
+        var id: String { rawValue }
 
         func matches(_ statusCode: Int?) -> Bool {
             guard let statusCode else {
@@ -64,8 +55,6 @@ struct NetworkInspectorView: View {
             }
         }
     }
-
-    // MARK: - Initializer
 
     init(previewLogs: [NetworkLog]? = nil) {
         self.previewLogs = previewLogs
@@ -106,49 +95,19 @@ struct NetworkInspectorView: View {
         }.count
     }
 
-    // MARK: - Detail Destination
-
-    @ViewBuilder
-    private var selectedDetailDestination: some View {
-        if let log = selectedLog {
-            NetworkDetailView(log: log)
-        } else {
-            EmptyView()
-        }
-    }
-
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                navigationHeader
-                Divider()
-
-                if filteredLogs.isEmpty {
-                    emptyState
-                } else {
-                    networkList
-                }
-                
-                searchBar
-                overviewBar
+        VStack(spacing: 0) {
+            navigationHeader
+            Divider()
+            if filteredLogs.isEmpty {
+                emptyState
+            } else {
+                networkList
             }
-            .background(
-                Color(uiColor: .systemGroupedBackground)
-            )
-
-            // Programmatic navigation prevents each row from
-            // independently recognizing a NavigationLink tap.
-            NavigationLink(
-                destination: selectedDetailDestination,
-                isActive: $isDetailActive
-            ) {
-                EmptyView()
-            }
-            .hidden()
-            .frame(width: 0, height: 0)
-            .accessibilityHidden(true)
+            searchBar
+            overviewBar
         }
         .background(
             Color(uiColor: .systemGroupedBackground)
@@ -261,8 +220,10 @@ struct NetworkInspectorView: View {
                 Button {
                     searchText = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
+                    Image(
+                        systemName: "xmark.circle.fill"
+                    )
+                    .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -414,7 +375,6 @@ struct NetworkInspectorView: View {
                     : Color(uiColor: .systemBackground)
             )
             .clipShape(Capsule())
-            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -428,9 +388,8 @@ struct NetworkInspectorView: View {
                     Array(filteredLogs.enumerated()),
                     id: \.element.id
                 ) { index, log in
-                    Button {
-                        selectedLog = log
-                        isDetailActive = true
+                    NavigationLink {
+                        NetworkDetailView(log: log)
                     } label: {
                         networkRow(log, index: index)
                             .contentShape(Rectangle())
@@ -442,27 +401,6 @@ struct NetworkInspectorView: View {
         .background(
             Color(uiColor: .systemGroupedBackground)
         )
-    }
-
-    // MARK: - Row Touch Handling
-
-    private func handleRowTouch(
-        _ log: NetworkLog,
-        translation: CGSize
-    ) {
-        let distance = hypot(
-            translation.width,
-            translation.height
-        )
-
-        // If the finger moved enough, treat the interaction
-        // as scrolling rather than tapping a request.
-        guard distance < tapMovementThreshold else {
-            return
-        }
-
-        selectedLog = log
-        isDetailActive = true
     }
 
     // MARK: - Network Row
@@ -479,17 +417,16 @@ struct NetworkInspectorView: View {
                     DebugUIStyle.statusColor(log.statusCode)
                 )
                 .frame(width: 4)
+                .frame(maxHeight: .infinity)
 
             HStack(spacing: 10) {
                 VStack(
                     alignment: .leading,
                     spacing: 8
                 ) {
+                    // Method, status and duration
                     HStack(spacing: 7) {
-                        methodBadge(
-                            log.method,
-                            log.statusCode
-                        )
+                        methodBadge(log.method, log.statusCode)
 
                         statusBadge(log.statusCode)
 
@@ -498,6 +435,7 @@ struct NetworkInspectorView: View {
                         durationView(log.duration)
                     }
 
+                    // Host
                     Text(parts.host)
                         .font(
                             .system(
@@ -513,6 +451,7 @@ struct NetworkInspectorView: View {
                             alignment: .leading
                         )
 
+                    // Path
                     if !parts.path.isEmpty {
                         Text(parts.path)
                             .font(.system(size: 12))
@@ -523,8 +462,10 @@ struct NetworkInspectorView: View {
                                 maxWidth: .infinity,
                                 alignment: .leading
                             )
+                            .textSelection(.enabled)
                     }
 
+                    // Timestamp
                     HStack(spacing: 6) {
                         Image(systemName: "clock")
                             .font(.system(size: 11))
@@ -563,9 +504,7 @@ struct NetworkInspectorView: View {
         )
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(
-                    Color.secondary.opacity(0.16)
-                )
+                .fill(Color.secondary.opacity(0.16))
                 .frame(height: 0.5)
                 .padding(.leading, 36)
         }
@@ -592,7 +531,6 @@ struct NetworkInspectorView: View {
         }
 
         let path = components.percentEncodedPath
-
         let query = components.percentEncodedQuery.map {
             "?\($0)"
         } ?? ""
@@ -616,14 +554,11 @@ struct NetworkInspectorView: View {
                     weight: .bold
                 )
             )
-            .foregroundColor(
-                DebugUIStyle.statusColor(statusCode)
-            )
+            .foregroundColor(DebugUIStyle.statusColor(statusCode))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
-                DebugUIStyle.statusColor(statusCode)
-                    .opacity(0.12)
+                DebugUIStyle.statusColor(statusCode).opacity(0.12)
             )
             .clipShape(Capsule())
     }

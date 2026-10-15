@@ -184,7 +184,7 @@ private struct DebugFloatingButtonPreview: UIViewRepresentable {
                 in: Bundle.module,
                 compatibleWith: nil
             ),
-            environment: environment
+            environment: .uat
         )
     }
 
