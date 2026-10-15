@@ -70,7 +70,10 @@ final class DebugFloatingButton: UIButton {
         // MARK: - Logo
 
         iconView.image = image
-        iconView.contentMode = .scaleAspectFill
+
+        // FIT: tampilkan seluruh gambar tanpa memotongnya.
+        iconView.contentMode = .scaleAspectFit
+
         iconView.clipsToBounds = true
         iconView.alpha = 0.92
         iconView.isUserInteractionEnabled = false
@@ -102,20 +105,17 @@ final class DebugFloatingButton: UIButton {
 
         // MARK: - Environment
 
-        environmentLabel.text =
-            environment.displayName
+        environmentLabel.text = environment.displayName
 
-        environmentLabel.font =
-            .systemFont(
-                ofSize: 14,
-                weight: .semibold
-            )
+        environmentLabel.font = .systemFont(
+            ofSize: 14,
+            weight: .semibold
+        )
 
         environmentLabel.textColor = .white
         environmentLabel.textAlignment = .center
         environmentLabel.isUserInteractionEnabled = false
 
-        // Text langsung menimpa logo.
         environmentLabel.layer.shadowColor =
             UIColor.black.cgColor
 
@@ -141,9 +141,7 @@ final class DebugFloatingButton: UIButton {
 
         // MARK: - Shadow
 
-        layer.shadowColor =
-            UIColor.black.cgColor
-
+        layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.28
         layer.shadowRadius = 7
 
@@ -152,23 +150,16 @@ final class DebugFloatingButton: UIButton {
             height: 3
         )
 
-        // Jangan kasih background opaque.
         // Background berasal dari backgroundView.
         layer.cornerRadius = 26
     }
 
     override var isHighlighted: Bool {
         didSet {
-            UIView.animate(
-                withDuration: 0.12
-            ) {
-                self.alpha =
-                    self.isHighlighted
-                    ? 0.65
-                    : 1.0
+            UIView.animate(withDuration: 0.12) {
+                self.alpha = self.isHighlighted ? 0.65 : 1.0
 
-                self.transform =
-                    self.isHighlighted
+                self.transform = self.isHighlighted
                     ? CGAffineTransform(
                         scaleX: 0.94,
                         y: 0.94
@@ -193,7 +184,7 @@ private struct DebugFloatingButtonPreview: UIViewRepresentable {
                 in: Bundle.module,
                 compatibleWith: nil
             ),
-            environment: .uat
+            environment: environment
         )
     }
 
