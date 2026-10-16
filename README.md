@@ -139,7 +139,8 @@ import DMDebugToolKitMoya
 Create the plugin:
 
 ```swift
-let provider = MoyaProvider<YourTarget>(
+let provider = MoyaProvider<MyTarget>(
+    requestClosure: DebugNetworkConditionsMoya.requestClosure(),
     plugins: [
         DebugMoyaPlugin()
     ]

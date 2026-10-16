@@ -1,9 +1,8 @@
-
 import SwiftUI
 
 struct DeviceInfoView: View {
-
     private let info = DeviceInfo.current
+    var onBack: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -62,28 +61,18 @@ struct DeviceInfoView: View {
 
     private var navigationHeader: some View {
         HStack {
-            DebugBackButton()
-
+            DebugBackButton(action: onBack)
             Spacer()
-
-            // Menjaga judul tetap tepat di tengah.
-            Color.clear
-                .frame(width: 40, height: 40)
+            Color.clear.frame(width: 40, height: 40)
         }
         .overlay {
             Text("Device Info")
-                .font(
-                    .system(
-                        size: 16,
-                        weight: .medium
-                    )
-                )
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .allowsHitTesting(false)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding()
         .background(Color(uiColor: .systemBackground))
     }
 
@@ -98,19 +87,12 @@ struct DeviceInfoView: View {
         Section {
             ForEach(rows.indices, id: \.self) { index in
                 let row = rows[index]
-
-                infoRow(
-                    title: row.0,
-                    value: row.1,
-                    index: index
-                )
+                infoRow(title: row.0, value: row.1, index: index)
             }
         } header: {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(
-                        .system(size: 12, weight: .semibold)
-                    )
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(color)
 
                 Text(title)
@@ -123,11 +105,7 @@ struct DeviceInfoView: View {
 
     // MARK: - Info Row
 
-    private func infoRow(
-        title: String,
-        value: String,
-        index: Int
-    ) -> some View {
+    private func infoRow(title: String, value: String, index: Int) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text(title)
                 .font(DebugUIStyle.body)
@@ -138,25 +116,31 @@ struct DeviceInfoView: View {
                 .font(DebugUIStyle.bodyMedium)
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .trailing
-                )
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.vertical, 5)
-        .listRowBackground(
-            DebugUIStyle.rowBackground(index: index)
-        )
+        .listRowBackground(DebugUIStyle.rowBackground(index: index))
     }
 }
 
 #if DEBUG
 struct DeviceInfoView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView {
-            DeviceInfoView()
+        Group {
+            NavigationView {
+                DeviceInfoView(onBack: {})
+                    .preferredColorScheme(.light)
+            }
+            .navigationViewStyle(.stack)
+            .previewDisplayName("Device Info - Light")
+
+            NavigationView {
+                DeviceInfoView(onBack: {})
+                    .preferredColorScheme(.dark)
+            }
+            .navigationViewStyle(.stack)
+            .previewDisplayName("Device Info - Dark")
         }
-        .navigationViewStyle(.stack)
     }
 }
 #endif

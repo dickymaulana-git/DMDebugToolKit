@@ -14,7 +14,8 @@ struct NetworkInspectorView: View {
     @State private var selectedLog: NetworkLog?
     @State private var isDetailActive = false
     @State private var rowDragDistance: CGFloat = 0
-
+    var onBack: () -> Void = {}
+    
     private let tapMovementThreshold: CGFloat = 10
     
     private let timeFormatter: DateFormatter = {
@@ -22,6 +23,7 @@ struct NetworkInspectorView: View {
         formatter.dateFormat = "HH:mm:ss"
         return formatter
     }()
+    
 
     private enum StatusFilter: String, CaseIterable, Identifiable {
         case all = "All"
@@ -62,11 +64,14 @@ struct NetworkInspectorView: View {
         }
     }
 
-    init(previewLogs: [NetworkLog]? = nil) {
+    init(
+        previewLogs: [NetworkLog]? = nil,
+        onBack: @escaping () -> Void = {}
+    ) {
         self.previewLogs = previewLogs
+        self.onBack = onBack
         _logs = State(initialValue: previewLogs ?? [])
     }
-
     // MARK: - Filtered Logs
 
     private var filteredLogs: [NetworkLog] {
@@ -115,9 +120,7 @@ struct NetworkInspectorView: View {
             searchBar
             overviewBar
         }
-        .background(
-            Color(uiColor: .systemGroupedBackground)
-        )
+        .background(Color(uiColor: .systemGroupedBackground))
         .navigationBarHidden(true)
         .onAppear {
             if previewLogs == nil {
@@ -147,7 +150,7 @@ struct NetworkInspectorView: View {
 
     private var navigationHeader: some View {
         HStack {
-            DebugBackButton()
+            DebugBackButton(action: onBack)
 
             Spacer()
 
@@ -194,8 +197,7 @@ struct NetworkInspectorView: View {
                 .minimumScaleFactor(0.8)
                 .allowsHitTesting(false)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding()
         .background(
             Color(uiColor: .systemBackground)
         )
@@ -667,12 +669,25 @@ struct NetworkInspectorView: View {
 #if DEBUG
 struct NetworkInspectorView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView {
-            NetworkInspectorView(
-                previewLogs: DebugPreviewData.networkLogs
-            )
+        Group {
+            NavigationView {
+                NetworkInspectorView(
+                    previewLogs: DebugPreviewData.networkLogs
+                )
+                .environment(\.colorScheme, .light)
+            }
+            .navigationViewStyle(.stack)
+            .previewDisplayName("Network Inspector - Light")
+
+            NavigationView {
+                NetworkInspectorView(
+                    previewLogs: DebugPreviewData.networkLogs
+                )
+                .environment(\.colorScheme, .dark)
+            }
+            .navigationViewStyle(.stack)
+            .previewDisplayName("Network Inspector - Dark")
         }
-        .navigationViewStyle(.stack)
     }
 }
 #endif

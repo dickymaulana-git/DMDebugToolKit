@@ -34,6 +34,7 @@ let package = Package(
                 .process("Resources")
             ]
         ),
+
         .target(
             name: "DMDebugToolKitMoya",
             dependencies: [
@@ -44,6 +45,7 @@ let package = Package(
                 )
             ]
         ),
+
         .testTarget(
             name: "DMDebugToolKitTests",
             dependencies: [

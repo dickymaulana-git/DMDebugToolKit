@@ -10,7 +10,8 @@ struct DebugLogView: View {
     @Environment(\.presentationMode) private var presentationMode
     @State private var searchText = ""
     private let logger = DebugLogger.shared
-
+    var onBack: () -> Void = {}
+    
     var filteredEntries: [DebugLogEntry] {
         let query = searchText.trimmingCharacters(
             in: .whitespacesAndNewlines
@@ -116,7 +117,7 @@ struct DebugLogView: View {
     
     private var navigationHeader: some View {
         HStack {
-            DebugBackButton()
+            DebugBackButton(action: onBack)
 
             Spacer()
 
@@ -147,8 +148,7 @@ struct DebugLogView: View {
                 .lineLimit(1)
                 .allowsHitTesting(false)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding()
         .background(Color(uiColor: .systemBackground))
     }
     
@@ -368,6 +368,8 @@ struct DebugLogView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             DebugLogView()
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Cache Manager - Dark")
         }
         .onAppear {
             let logger = DebugLogger.shared

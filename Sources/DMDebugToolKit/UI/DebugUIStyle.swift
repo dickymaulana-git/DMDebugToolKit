@@ -17,7 +17,7 @@ enum DebugUIStyle {
     // MARK: - Typography
 
     static let sectionTitle: Font = .system(
-        size: 16,
+        size: 14,
         weight: .semibold
     )
 

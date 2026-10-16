@@ -29,7 +29,7 @@ struct NetworkDetailView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(
                         alignment: .leading,
-                        spacing: 14
+                        spacing: 16
                     ) {
                         // MARK: - INFO
 
@@ -136,12 +136,12 @@ struct NetworkDetailView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 4)
                     .padding(.top, 16)
                     .padding(.bottom, 20)
                 }
             }
-            .background(Color(uiColor: .systemBackground))
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationBarHidden(true)
 
             // MARK: - Action Menu Overlay
@@ -317,8 +317,7 @@ struct NetworkDetailView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding()
         .frame(height: 56)
         .background(Color(uiColor: .systemBackground))
     }
@@ -1140,12 +1139,25 @@ struct NetworkDetailView: View {
 #if DEBUG
 struct NetworkDetailView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView {
-            NetworkDetailView(
-                log: DebugPreviewData.networkLogs[0]
-            )
+        Group {
+            NavigationView {
+                NetworkDetailView(
+                    log: DebugPreviewData.networkLogs[0]
+                )
+            }
+            .navigationViewStyle(.stack)
+            .preferredColorScheme(.light)
+            .previewDisplayName("Network Detail - Light")
+
+            NavigationView {
+                NetworkDetailView(
+                    log: DebugPreviewData.networkLogs[0]
+                )
+            }
+            .navigationViewStyle(.stack)
+            .preferredColorScheme(.dark)
+            .previewDisplayName("Network Detail - Dark")
         }
-        .navigationViewStyle(.stack)
     }
 }
 #endif

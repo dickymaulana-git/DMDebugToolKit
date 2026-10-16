@@ -9,7 +9,8 @@ struct PerformanceMonitorView: View {
     @State private var peakCPU: Double = 0
     @State private var snapshots: [PerformanceSnapshot] = []
     @State private var memorySnapshots: [MemorySnapshot] = []
-
+    var onBack: () -> Void = {}
+    
     private let monitor =
         PerformanceMonitor.shared
 
@@ -96,7 +97,7 @@ struct PerformanceMonitorView: View {
     
     private var navigationHeader: some View {
         HStack {
-            DebugBackButton()
+            DebugBackButton(action: onBack)
 
             Spacer()
 
@@ -430,6 +431,7 @@ struct PerformanceMonitorView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             PerformanceMonitorView()
+                .preferredColorScheme(.dark)
         }
         .navigationViewStyle(.stack)
     }
