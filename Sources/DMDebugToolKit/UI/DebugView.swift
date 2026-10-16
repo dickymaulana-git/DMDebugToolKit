@@ -107,6 +107,7 @@ struct DebugView: View {
             )
         }
         .navigationViewStyle(.stack)
+        .preferredColorScheme(selectedColorScheme)
     }
 
     // MARK: - Main Menu
@@ -576,6 +577,8 @@ struct DebugThemeSettingsView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationBarHidden(true)
+        .navigationViewStyle(.stack)
+        .preferredColorScheme(selectedColorScheme)
     }
 
     private var selectedColorScheme: ColorScheme? {
@@ -616,48 +619,42 @@ struct DebugThemeSettingsView: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { themeMode = value }
+        .onTapGesture {
+            themeMode = value
+
+            NotificationCenter.default.post(
+                name: Notification.Name(
+                    "DMDebugToolkitAppearanceDidChange"
+                ),
+                object: nil
+            )
+        }
     }
 }
 
 #if DEBUG
 struct DebugView_Previews: PreviewProvider {
     private static let previewDefaults: UserDefaults = {
-        let defaults = UserDefaults(suiteName: "DMDebugToolkitPreview")!
-        defaults.set("system", forKey: "dm.debug.toolkit.themeMode")
+        let defaults = UserDefaults(
+            suiteName: "DMDebugToolkitPreview"
+        )!
+
+        if defaults.object(
+            forKey: "dm.debug.toolkit.themeMode"
+        ) == nil {
+            defaults.set(
+                "system",
+                forKey: "dm.debug.toolkit.themeMode"
+            )
+        }
+
         return defaults
     }()
 
     static var previews: some View {
-        Group {
-            previewHost(colorScheme: .light, title: "Debug Toolkit - Light")
-            previewHost(colorScheme: .dark, title: "Debug Toolkit - Dark")
-        }
-    }
-
-    private static func previewHost(
-        colorScheme: ColorScheme,
-        title: String
-    ) -> some View {
-        ZStack {
-            Color.gray
-                .ignoresSafeArea()
-
-            VStack {
-                HStack {
-                    Text("Demo App")
-                        .font(.largeTitle)
-                    Spacer()
-                }
-                Spacer()
-            }
-            .padding()
-        }
-        .sheet(isPresented: .constant(true)) {
-            DebugView()
-                .preferredColorScheme(.dark)
-        }
-        .previewDisplayName(title)
+        DebugView()
+            .defaultAppStorage(previewDefaults)
+            .previewDisplayName("DM Debug Toolkit")
     }
 }
 #endif

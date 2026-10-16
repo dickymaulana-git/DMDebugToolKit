@@ -827,10 +827,7 @@ struct NetworkDetailView: View {
             .padding(.horizontal, 12)
             .padding(.top, 10)
 
-            ScrollView(
-                [.vertical, .horizontal],
-                showsIndicators: true
-            ) {
+            ScrollView(.vertical, showsIndicators: true) {
                 Text(value)
                     .font(
                         .system(
@@ -844,6 +841,7 @@ struct NetworkDetailView: View {
                         maxWidth: .infinity,
                         alignment: .leading
                     )
+                    .multilineTextAlignment(.leading)
                     .fixedSize(
                         horizontal: false,
                         vertical: true

@@ -10,6 +10,9 @@ final class DebugViewController: UIViewController {
         UIHostingController<DebugSheetHostView>?
 
     private let sheetState = DebugSheetState()
+    
+    private let appearanceKey = "dm.debug.toolkit.themeMode"
+    private var appearanceObserver: NSObjectProtocol?
 
     private var hasInitialPosition = false
     private var dragStartCenter: CGPoint = .zero
@@ -54,10 +57,10 @@ final class DebugViewController: UIViewController {
 
         view.backgroundColor = .clear
 
+        observeAppearanceChanges()
+
         sheetState.onDismiss = { [weak self] in
-            guard let self else {
-                return
-            }
+            guard let self else { return }
 
             if let debugWindow = self.view.window as? DebugWindow {
                 debugWindow.allowsFullInteraction = false
@@ -66,6 +69,7 @@ final class DebugViewController: UIViewController {
 
         setupSheetHost()
         setupFloatingButton()
+        applyDebugAppearance()
     }
 
     override func viewDidLayoutSubviews() {
@@ -93,6 +97,53 @@ final class DebugViewController: UIViewController {
             floatingButton.center = clampedCenter(
                 floatingButton.center
             )
+        }
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        applyDebugAppearance()
+    }
+
+    deinit {
+        if let appearanceObserver {
+            NotificationCenter.default.removeObserver(appearanceObserver)
+        }
+    }
+
+    private func observeAppearanceChanges() {
+        appearanceObserver = NotificationCenter.default.addObserver(
+            forName: Notification.Name(
+                "DMDebugToolkitAppearanceDidChange"
+            ),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applyDebugAppearance()
+        }
+    }
+
+    private func applyDebugAppearance() {
+        let mode = UserDefaults.standard.string(
+            forKey: "dm.debug.toolkit.themeMode"
+        ) ?? "system"
+
+        let style: UIUserInterfaceStyle
+
+        switch mode {
+        case "light":
+            style = .light
+        case "dark":
+            style = .dark
+        default:
+            style = .unspecified
+        }
+
+        overrideUserInterfaceStyle = style
+        hostingController?.overrideUserInterfaceStyle = style
+
+        if let debugWindow = view.window as? DebugWindow {
+            debugWindow.overrideUserInterfaceStyle = style
         }
     }
 
