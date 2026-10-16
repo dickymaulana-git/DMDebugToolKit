@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DebugView: View {
-    private static let appVersion = "1.0.7"
+    private static let appVersion = "1.0.8"
 
     var body: some View {
         NavigationView {

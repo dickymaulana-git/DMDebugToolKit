@@ -2,25 +2,34 @@
 
 import Foundation
 
-enum DebugLogLevel: String {
+public enum DebugLogLevel: String {
     case info = "INFO"
     case warning = "WARNING"
     case error = "ERROR"
     case debug = "DEBUG"
 }
 
-struct DebugLogEntry: Identifiable {
-    let id = UUID()
-    let timestamp: Date
-    let level: DebugLogLevel
-    let message: String
+public struct DebugLogEntry: Identifiable {
+    public let id = UUID()
+    public let timestamp: Date
+    public let level: DebugLogLevel
+    public let message: String
+
+    public init(
+        timestamp: Date,
+        level: DebugLogLevel,
+        message: String
+    ) {
+        self.timestamp = timestamp
+        self.level = level
+        self.message = message
+    }
 }
 
-final class DebugLogger {
+public final class DebugLogger {
+    public static let shared = DebugLogger()
 
-    static let shared = DebugLogger()
-
-    private(set) var entries: [DebugLogEntry] = []
+    private(set) public var entries: [DebugLogEntry] = []
 
     private let queue = DispatchQueue(
         label: "DebugToolkit.Logger"
@@ -30,41 +39,29 @@ final class DebugLogger {
 
     private init() {}
 
-    func info(_ message: String) {
-        add(
-            level: .info,
-            message: message
-        )
+    public func info(_ message: String) {
+        add(level: .info, message: message)
     }
 
-    func warning(_ message: String) {
-        add(
-            level: .warning,
-            message: message
-        )
+    public func warning(_ message: String) {
+        add(level: .warning, message: message)
     }
 
-    func error(_ message: String) {
-        add(
-            level: .error,
-            message: message
-        )
+    public func error(_ message: String) {
+        add(level: .error, message: message)
     }
 
-    func debug(_ message: String) {
-        add(
-            level: .debug,
-            message: message
-        )
+    public func debug(_ message: String) {
+        add(level: .debug, message: message)
     }
 
-    func clear() {
+    public func clear() {
         queue.sync {
             entries.removeAll()
         }
     }
-    
-    func allEntries() -> [DebugLogEntry] {
+
+    public func allEntries() -> [DebugLogEntry] {
         queue.sync {
             entries
         }
@@ -90,8 +87,6 @@ final class DebugLogger {
             }
         }
 
-        print(
-            "[\(level.rawValue)] \(message)"
-        )
+        print("[\(level.rawValue)] \(message)")
     }
 }
